@@ -1,7 +1,9 @@
 import { createApp } from 'vue'
-import App from './App.vue'
+import ThemeWrapper from './ThemeWrapper.vue'
 import 'mdui'
+import { setColorScheme } from 'mdui/functions/setColorScheme.js';
 import 'mdui/mdui.css'
 import './style.css'
 
-createApp(App).mount('#app')
+setColorScheme("#0f61c5")
+createApp(ThemeWrapper).mount('#app')
