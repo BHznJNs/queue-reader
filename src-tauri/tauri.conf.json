@@ -13,6 +13,21 @@
   "tauri": {
     "allowlist": {
       "all": false,
+      "fs": {
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "copyFile": true,
+        "createDir": true,
+        "removeDir": true,
+        "removeFile": true,
+        "renameFile": true,
+        "exists": true,
+        "scope": ["$RESOURCE/*", "$RESOURCE/userData/*"]
+      },
+      "path": {
+        "all": true
+      },
       "shell": {
         "all": false,
         "execute": false,
@@ -64,7 +79,7 @@
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "Read It Later",
+        "title": "Queue Reader",
         "width": 800
       }
     ]

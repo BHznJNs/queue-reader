@@ -1,64 +1,59 @@
 <script setup lang="ts">
-import { computed, inject, Ref } from 'vue'
-import type { ActualThemeState } from '../ThemeWrapper.vue'
-export interface ArticleInfo {
-  title: string,
-  link: string,
-  appendTime: number, // timestamp
-  neededTime: number, // unit: min
-  description?: string,
-}
+import { ref, computed, inject, Ref, onMounted } from 'vue'
+import { Checkbox } from 'mdui'
+import { ArticleInfo, timeAgo } from '../scripts/utils'
+import type { ActualThemeState } from '../wrapper/ThemeProvider'
+import { useI18n } from 'vue-i18n';
+
 const actualTheme = inject('actual-theme') as Ref<ActualThemeState>
-const props = defineProps<ArticleInfo>()
+const { t } = useI18n()
+const props = defineProps<ArticleInfo & {
+  hideTag: boolean,
+  isArchives: boolean,
+}>()
+
+const checkbox = ref<Checkbox>()
+const isFinished = ref(props.isArchives)
 
 const cardVariant = computed(() =>
   actualTheme.value === 'light' ? 'elevated' : 'filled')
 
-function timeAgo(timestamp: number): string {
-    const difference = Math.floor((Date.now() - timestamp) / 1000);
-    const intervals = {
-        'year': 31536000,
-        'month': 2628000,
-        'week': 604800,
-        'day': 86400,
-        'hour': 3600,
-        'minute': 60,
-        'second': 1
-    };
+const emit = defineEmits(['finish', 'unfinish'])
 
-    for (const intervalName in intervals) {
-        const interval = intervals[intervalName];
-        if (difference >= interval) {
-            const count = Math.floor(difference / interval);
-            return `about ${count} ${intervalName}${count !== 1 ? 's' : ''} ago`;
-        }
+onMounted(() => {
+  checkbox.value?.addEventListener('change', (e) => {
+    const target = e.target as Checkbox
+    if (target.checked) {
+      setTimeout(() => emit('finish', props.id), 400)
+    } else {
+      setTimeout(() => emit('unfinish', props.id), 400)
     }
-
-    return 'just now';
-}
+    isFinished.value = target.checked
+  })
+})
 </script>
 
 <template>
-<mdui-card :variant="cardVariant" class="mdui-pose">
-  <div class="card-content-container">
-    <mdui-checkbox></mdui-checkbox>
-    <div class="article">
-      <a :href="props.link" target="_blank"></a>
-      <h3>{{ props.title }}</h3>
-      <div class="article-info">
-        <p>{{ timeAgo(props.appendTime) }}</p>
-        <mdui-divider verticle></mdui-divider>
-        <p>{{ props.neededTime }} min read</p>
+  <mdui-card :variant="cardVariant" class="mdui-pose">
+    <div :class="{'finished': isFinished}" class="card-content-container">
+      <mdui-checkbox ref="checkbox" :checked="isArchives" />
+      <div class="article">
+        <a :href="props.link" target="_blank"></a>
+        <h3>{{ props.title }}</h3>
+        <div class="article-info">
+          <mdui-badge v-show="!hideTag">{{ props.tag }}</mdui-badge>
+          <mdui-divider v-show="!hideTag" verticle></mdui-divider>
+          <p>{{ timeAgo(props.appendTime) }}</p>
+          <mdui-divider verticle></mdui-divider>
+          <p>{{ t('list.neededTime', [props.neededTime]) }}</p>
+        </div>
+        <p class="description" v-show="props.description">{{ props.description }}</p>
       </div>
     </div>
-  </div>
-</mdui-card>
+  </mdui-card>
 </template>
 
 <style scoped>
-
-/* background-color: rgb(var(--mdui-color-surface-container-highest)); */
-
 .card-content-container {
   display: flex;
   gap: .5rem;
@@ -83,9 +78,22 @@ function timeAgo(timestamp: number): string {
     }
 
     h3 {
+      display: inline;
       overflow: hidden;
       white-space: nowrap;
-      text-overflow: ellipsis; 
+      text-overflow: ellipsis;
+
+      color: rgb(var(--mdui-color-on-surface));
+      background-image: linear-gradient(
+          to right,
+          rgb(var(--mdui-color-on-surface)),
+          rgb(var(--mdui-color-on-surface))
+      );
+      background-repeat: no-repeat;
+      background-position: left center;
+      background-size: 0 2px;
+      transition: color .3s,
+                  background .3s;
     }
 
     p {
@@ -109,5 +117,10 @@ function timeAgo(timestamp: number): string {
       margin-top: 1rem;
     }
   }
+}
+
+.finished h3 {
+  color: rgba(var(--mdui-color-on-surface), .6) !important;
+  background-size: 100% 2px !important;
 }
 </style>

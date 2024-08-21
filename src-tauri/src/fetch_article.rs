@@ -1,7 +1,17 @@
+use std::time::{self, SystemTime, UNIX_EPOCH};
 use reqwest;
 use unicode_segmentation::UnicodeSegmentation;
 use scraper::{ElementRef, Html, Selector};
 use serde::Serialize;
+
+fn get_now() -> Result<u128, String> {
+
+    let now = SystemTime::now();
+    let duration_since_epoch = now
+        .duration_since(UNIX_EPOCH)
+        .map_err(|err| err.to_string())?;
+    return Ok(duration_since_epoch.as_millis());
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -9,17 +19,23 @@ pub struct ArticleInfo {
     title: String,
     link: String,
     description: Option<String>,
+    append_time: u128,
     needed_time: usize,
 }
 
 #[tauri::command]
-pub async fn fetch_article(url: &str) -> Result<ArticleInfo, ()> {
+pub async fn fetch_article(url: &str) -> Result<ArticleInfo, String> {
     const READING_FACTOR: usize = 250;
 
-    let html = reqwest::get(url)
-        .await.map_err(|_| ())?
+    let timeout = time::Duration::from_secs(5);
+    let client = reqwest::ClientBuilder::new()
+        .timeout(timeout)
+        .build().map_err(|err| err.to_string())?;
+    let html = client.get(url)
+        .send()
+        .await.map_err(|err| err.to_string())?
         .text()
-        .await.map_err(|_| ())?;
+        .await.map_err(|err| err.to_string())?;
     let document = Html::parse_document(&html);
 
     let title_selector = Selector::parse("title").unwrap();
@@ -33,7 +49,8 @@ pub async fn fetch_article(url: &str) -> Result<ArticleInfo, ()> {
     let content_iter = document.select(&content_selector);
 
     let title = title_iter
-        .next().ok_or(())?
+        .next()
+        .unwrap()
         .inner_html();
     let description = match description_iter.next() {
         Some(desc) if desc.value().attr("content").is_some() => {
@@ -50,11 +67,13 @@ pub async fn fetch_article(url: &str) -> Result<ArticleInfo, ()> {
         .map(counter)
         .sum::<usize>();
     let needed_time = word_count / READING_FACTOR;
+    let append_time = get_now()?;
 
     return Ok(ArticleInfo {
         title,
         link: url.to_string(),
         description,
+        append_time,
         needed_time,
     });
 }

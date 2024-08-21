@@ -1,0 +1,22 @@
+mdui-divider {
+    height: .8rem;
+}
+
+.read-list {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding: 1rem 2rem;
+
+    .empty {
+        text-align: center;
+        opacity: .4;
+    }
+}
+
+.pagination {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+}

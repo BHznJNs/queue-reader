@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api'
 import type { Dialog, Dropdown, TextField, Menu } from 'mdui'
-import '@mdui/icons/arrow-drop-up.js'
+import '@mdui/icons/arrow-right.js'
 import '@mdui/icons/arrow-drop-down.js'
-import { ArticleInfo } from './ReadItem.vue'
+import { isValidUrl, ArticleInfo } from '../scripts/utils'
+import { showMsg } from './ErrorMsg'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const dialog = ref<Dialog>()
 const tagDropdown = ref<Dropdown>()
+const tagMenu = ref<Menu>()
 const isTagDropdownOpen = ref(false)
 const isArticleLoading = ref(false)
 const targetArticleUrl = ref('')
@@ -50,69 +54,115 @@ function close() {
 function clear() {
   targetArticleUrl.value = ''
   targetArticleTag.value = ''
+  tagMenu.value!.value = ''
 }
 
 async function confirm() {
   isArticleLoading.value = true
-  const article = await invoke('fetch_article', {
-    url: targetArticleUrl.value,
-  }) as ArticleInfo
-  emit('confirm', article)
-  clear()
-  isArticleLoading.value = false
-  close()
+  let article: ArticleInfo
+  try {
+    console.assert(targetArticleUrl.value.length > 0)
+    console.assert(targetArticleTag.value.length > 0)
+    article = await invoke('fetch_article', {
+      url: targetArticleUrl.value,
+    }) as ArticleInfo
+  } catch(err) {
+    showMsg('Adding New Article Error!')
+    console.error(err)
+    setTimeout(() =>
+      (isArticleLoading.value = false), 100)
+    return
+  }
+  emit('confirm', article, targetArticleTag.value)
+  clear(); close()
+  setTimeout(() =>
+    (isArticleLoading.value = false), 100)
 }
 
 const emit = defineEmits(['confirm'])
+const props = defineProps<{
+  tags: Set<string>,
+}>()
+
+const isAbleToComfirm = computed(() =>
+  targetArticleTag.value.length &&
+  targetArticleUrl.value.length &&
+  isValidUrl(targetArticleUrl.value)
+)
 
 defineExpose({
-  open,
-  close,
-  clear,
+  open, close, clear,
+})
+
+onMounted(() => {
+  tagDropdown.value?.addEventListener('closed', () => {
+    isTagDropdownOpen.value = false
+  })
 })
 </script>
 
 <template>
 <mdui-dialog
   ref="dialog"
-  close-on-esc
-  close-on-overlay-click
+  :close-on-esc="!isArticleLoading"
+  :close-on-overlay-click="!isArticleLoading"
 >
-  <span slot="headline">Add to Queue</span>
+  <span slot="headline">{{ t('newArticle.title') }}</span>
   <div class="article-info">
     <mdui-text-field
       variant="outlined"
-      label="Article URL"
-      type="url"
+      type="url" clearable
+      :label="t('newArticle.url')"
+      :disabled="isArticleLoading"
       :value="targetArticleUrl"
       @change="urlEditHandler"
-      clearable
     />
 
-    <mdui-dropdown ref="tagDropdown" trigger="manual" placement="auto">
+    <mdui-dropdown
+      ref="tagDropdown"
+      trigger="manual"
+    >
       <mdui-text-field
         slot="trigger"
         variant="outlined"
-        label="Article Tag"
+        type="text"
+        :label="t('newArticle.tag')"
+        :helper="t('newArticle.tagDesc')"
+        :disabled="isArticleLoading"
         :value="targetArticleTag"
         @change="tagEditHandler"
-        type="text"
       >
-        <mdui-icon-arrow-drop-up   @click="toggleDropdown" v-show="isTagDropdownOpen" slot="end-icon" />
-        <mdui-icon-arrow-drop-down @click="toggleDropdown" v-show="!isTagDropdownOpen" slot="end-icon" />
+        <div v-show="props.tags.size" slot="end-icon">
+          <mdui-icon-arrow-right @click="toggleDropdown" v-show="!isTagDropdownOpen" />
+          <mdui-icon-arrow-drop-down  @click="toggleDropdown" v-show="isTagDropdownOpen" />
+        </div>
       </mdui-text-field>
       <mdui-menu
-        @change="tagSelectHandler"
+        ref="tagMenu"
         part="menu"
         selects="single"
+        @change="tagSelectHandler"
       >
-        <mdui-menu-item value="Item 1">Item 1</mdui-menu-item>
-        <mdui-menu-item value="Item 2">Item 2 </mdui-menu-item>
+        <mdui-menu-item
+          v-for="(item, index) in props.tags"
+          :value="item"
+          :key="index"
+        >{{ item }}</mdui-menu-item>
       </mdui-menu>
     </mdui-dropdown>
   </div>
-  <mdui-button @click="close" slot="action" variant="text">Cancel</mdui-button>
-  <mdui-button @click="confirm" :loading="isArticleLoading" slot="action">Confirm</mdui-button>
+  <mdui-button
+    @click="close"
+    :disabled="isArticleLoading"
+    slot="action"
+    variant="text"
+  >{{ t('newArticle.actions.cancel') }}</mdui-button>
+  <mdui-button
+    @click="confirm"
+    :disabled="!isAbleToComfirm"
+    :loading="isArticleLoading"
+    slot="action"
+  >{{ t('newArticle.actions.confirm') }}</mdui-button>
 </mdui-dialog>
 </template>
 
