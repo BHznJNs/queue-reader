@@ -5,9 +5,11 @@ import { ArticleInfo } from '../scripts/utils'
 import { DataPath, GlobalFsOption, ListId, QUEUE } from '../scripts/path'
 import { writeTextFile } from '@tauri-apps/api/fs'
 import { DataStoreFromData } from '../scripts/store'
+import { useI18n } from 'vue-i18n'
 
 let queue: ArticleInfo[] = globalThis.__QUEUE__
 const queueRef = ref<ArticleInfo[]>(Array.from(queue))
+const { t } = useI18n()
 
 const emit = defineEmits(['finish'])
 const props = defineProps<{
@@ -56,7 +58,7 @@ defineExpose({
 
 <template>
 <div class="read-list">
-  <h1 class="empty" v-show="!list.length">Click "+" to Queue</h1>
+  <h1 class="empty" v-show="!list.length">{{ t('list.clickToQueue') }}</h1>
   <ReadItem
     v-for="item in list"
     v-bind="item"

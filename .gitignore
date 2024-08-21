@@ -21,6 +21,5 @@ node_modules
 *.sln
 *.sw?
 
+renderer/dist/
 src-tauri/target/
-
-.vscode/
