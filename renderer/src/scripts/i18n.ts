@@ -18,6 +18,7 @@ const messages = {
                 general: '约 {unit}前',
                 'just-now': '刚刚',
             },
+            duplicatedItemMsg: '重复文章！',
         },
         newArticle: {
             title: '添加到队列',
@@ -28,6 +29,7 @@ const messages = {
                 cancel: '取消',
                 confirm: '确定',
             },
+            errorMsg: '添加失败！',
         },
         sidebar: {
             queue: '待读',
@@ -65,8 +67,9 @@ const messages = {
                     minute: '1 minute | {n} minutes',
                 },
                 general: 'about {unit} ago',
-                'just-now': '刚刚',
+                'just-now': 'just now',
             },
+            duplicatedItemMsg: 'Duplicated Article!',
         },
         newArticle: {
             title: 'Add to Queue',
@@ -77,6 +80,7 @@ const messages = {
                 cancel: 'Cancel',
                 confirm: 'Confirm',
             },
+            errorMsg: 'Adding New Article Error!',
         },
         sidebar: {
             queue: 'Queue',

@@ -67,7 +67,7 @@ async function confirm() {
       url: targetArticleUrl.value,
     }) as ArticleInfo
   } catch(err) {
-    showMsg('Adding New Article Error!')
+    showMsg(t('newArticle.errorMsg'))
     console.error(err)
     setTimeout(() =>
       (isArticleLoading.value = false), 100)

@@ -6,6 +6,7 @@ import { DataPath, GlobalFsOption, ListId, QUEUE } from '../scripts/path'
 import { writeTextFile } from '@tauri-apps/api/fs'
 import { DataStoreFromData } from '../scripts/store'
 import { useI18n } from 'vue-i18n'
+import { showMsg } from './ErrorMsg'
 
 let queue: ArticleInfo[] = globalThis.__QUEUE__
 const queueRef = ref<ArticleInfo[]>(Array.from(queue))
@@ -31,9 +32,15 @@ function finishHandler(id: number) {
 }
 
 defineExpose({
-  append(item: ArticleInfo) {
+  append(item: ArticleInfo): boolean {
+    if (queue.find((i: ArticleInfo) => i.link === item.link)) {
+      // has duplicated item
+      showMsg(t('list.duplicatedItemMsg'))
+      return false
+    }
     queueRef.value.unshift(item)
     queue.unshift(item)
+    return true
   },
   insert(item: ArticleInfo) {
     let i = 0
@@ -52,7 +59,7 @@ defineExpose({
     queueRef.value = newQueue
     await writeTextFile(DataPath.queue, JSON.stringify(newQueue), GlobalFsOption)
     queue = globalThis.__QUEUE__ = DataStoreFromData(DataPath.queue, newQueue)
-  }
+  },
 })
 </script>
 
