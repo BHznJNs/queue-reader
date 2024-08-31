@@ -20,6 +20,9 @@ const messages = {
             },
             duplicatedItemMsg: '重复文章！',
         },
+        archives: {
+            nothing: '无归档文章',
+        },
         newArticle: {
             title: '添加到队列',
             url: '文章链接',
@@ -70,6 +73,9 @@ const messages = {
                 'just-now': 'just now',
             },
             duplicatedItemMsg: 'Duplicated Article!',
+        },
+        archives: {
+            nothing: 'Nothing Archived',
         },
         newArticle: {
             title: 'Add to Queue',

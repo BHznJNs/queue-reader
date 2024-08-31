@@ -24,9 +24,9 @@ onMounted(() => {
   checkbox.value?.addEventListener('change', (e) => {
     const target = e.target as Checkbox
     if (target.checked) {
-      setTimeout(() => emit('finish', props.id), 400)
+      setTimeout(() => emit('finish', props.id), 600)
     } else {
-      setTimeout(() => emit('unfinish', props.id), 400)
+      setTimeout(() => emit('unfinish', props.id), 600)
     }
     isFinished.value = target.checked
   })
@@ -34,32 +34,50 @@ onMounted(() => {
 </script>
 
 <template>
-  <mdui-card :variant="cardVariant" class="mdui-pose">
-    <div :class="{'finished': isFinished}" class="card-content-container">
-      <mdui-checkbox ref="checkbox" :checked="isArchives" />
-      <div class="article">
-        <a :href="props.link" target="_blank"></a>
-        <h3>{{ props.title }}</h3>
-        <div class="article-info">
-          <mdui-badge v-show="!hideTag">{{ props.tag }}</mdui-badge>
-          <mdui-divider v-show="!hideTag" verticle></mdui-divider>
-          <p>{{ timeAgo(props.appendTime) }}</p>
-          <mdui-divider verticle></mdui-divider>
-          <p>{{ t('list.neededTime', [props.neededTime]) }}</p>
-        </div>
-        <p class="description" v-show="props.description">{{ props.description }}</p>
+<mdui-card
+  :variant="cardVariant"
+  :class="{'finished': isFinished !== props.isArchives}"
+  class="mdui-pose"
+>
+  <div :class="{'finished': isFinished}" class="card-content-container">
+    <mdui-checkbox ref="checkbox" :checked="isArchives" />
+    <div class="article">
+      <a :href="props.link" target="_blank"></a>
+      <h3>{{ props.title }}</h3>
+      <div class="article-info">
+        <mdui-badge v-show="!hideTag">{{ props.tag }}</mdui-badge>
+        <mdui-divider v-show="!hideTag" verticle></mdui-divider>
+        <p>{{ timeAgo(props.appendTime) }}</p>
+        <mdui-divider verticle></mdui-divider>
+        <p>{{ t('list.neededTime', [props.neededTime]) }}</p>
       </div>
+      <p class="description" v-show="props.description">{{ props.description }}</p>
     </div>
-  </mdui-card>
+  </div>
+</mdui-card>
 </template>
 
 <style scoped>
+mdui-card {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows .3s .1s,
+              opacity .2s .25s;
+
+  &.finished {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
 .card-content-container {
   display: flex;
   gap: .5rem;
   align-items: start;
   padding: 1.5rem;
   padding-left: 1rem;
+  min-height: 0;
 
   .article {
     position: relative;

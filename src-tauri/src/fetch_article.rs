@@ -1,11 +1,10 @@
-use std::time::{self, SystemTime, UNIX_EPOCH};
-use reqwest;
-use unicode_segmentation::UnicodeSegmentation;
+use reqwest::{self, header, Client, Error};
 use scraper::{ElementRef, Html, Selector};
 use serde::Serialize;
+use std::time::{self, SystemTime, UNIX_EPOCH};
+use unicode_segmentation::UnicodeSegmentation;
 
 fn get_now() -> Result<u128, String> {
-
     let now = SystemTime::now();
     let duration_since_epoch = now
         .duration_since(UNIX_EPOCH)
@@ -23,19 +22,32 @@ pub struct ArticleInfo {
     needed_time: usize,
 }
 
+fn clinet_factory() -> Result<Client, Error> {
+    let timeout = time::Duration::from_secs(5);
+    let mut headers = header::HeaderMap::new();
+    headers.insert(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0"
+            .parse()
+            .unwrap(),
+    );
+
+    let client = reqwest::ClientBuilder::new()
+        .timeout(timeout)
+        .default_headers(headers)
+        .build();
+    return client;
+}
+
 #[tauri::command]
 pub async fn fetch_article(url: &str) -> Result<ArticleInfo, String> {
     const READING_FACTOR: usize = 250;
 
-    let timeout = time::Duration::from_secs(5);
-    let client = reqwest::ClientBuilder::new()
-        .timeout(timeout)
-        .build().map_err(|err| err.to_string())?;
-    let html = client.get(url)
-        .send()
-        .await.map_err(|err| err.to_string())?
-        .text()
-        .await.map_err(|err| err.to_string())?;
+    let error_mapper = |err: Error| err.to_string();
+
+    let client = clinet_factory().map_err(error_mapper)?;
+    let response = client.get(url).send().await.map_err(error_mapper)?;
+    let html = response.text().await.map_err(error_mapper)?;
     let document = Html::parse_document(&html);
 
     let title_selector = Selector::parse("title").unwrap();
@@ -50,7 +62,7 @@ pub async fn fetch_article(url: &str) -> Result<ArticleInfo, String> {
 
     let title = title_iter
         .next()
-        .unwrap()
+        .ok_or(String::from("parse response error"))?
         .inner_html();
     let description = match description_iter.next() {
         Some(desc) if desc.value().attr("content").is_some() => {

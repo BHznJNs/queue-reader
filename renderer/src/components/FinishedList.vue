@@ -5,11 +5,13 @@ import '@mdui/icons/arrow-forward.js'
 import ReadItem from './ReadItem.vue'
 import { ArticleInfo } from '../scripts/utils'
 import { StackStore } from '../scripts/store'
+import { useI18n } from 'vue-i18n'
 
 const archives: StackStore<ArticleInfo> = globalThis.__ARCHIVES__
 const archivesRef = ref<ArticleInfo[]>([])
 const currentPage = ref(1)
 const totalPage = ref(archives.size)
+const { t } = useI18n()
 
 const emit = defineEmits(['unfinish'])
 
@@ -46,7 +48,9 @@ onMounted(() => {
 
 <template>
 <div class="read-list">
-  <h1 class="empty" v-show="!archivesRef.length">Nothing Archived</h1>
+  <h1 class="empty" v-show="!archivesRef.length">
+    {{ t('archives.nothing') }}
+  </h1>
   <ReadItem
     v-for="item in archivesRef"
     v-bind="item"
