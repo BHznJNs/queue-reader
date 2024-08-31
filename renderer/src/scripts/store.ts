@@ -49,9 +49,6 @@ export async function ManualDataStore<T extends object>(path: string): Promise<M
     const data = await readTextFile(path, GlobalFsOption)
     const value = JSON.parse(data)
 
-    const replacer = (_: string, value: any) => (value instanceof Set)
-        ? Array.from(value)
-        : value
     const updater = () =>
         writeTextFile(path, JSON.stringify(value, replacer), GlobalFsOption)
     return { updater, value }
@@ -90,7 +87,7 @@ export class StackStore<T> {
 
     async #realloc(store: ManualDataStore<T[]>, index: number) {
         const toBeExtended = store.value.length >= (PAGEING_FACTOR + REACLLOC_FACTOR)
-        const toBeShrinked = store.value.length === 0
+        const toBeShrinked = (store.value.length === 0) && (this.size > 1)
         if (!toBeExtended && !toBeShrinked) {
             await store.updater()
             return
@@ -171,7 +168,7 @@ export class StackStore<T> {
         const page = await this.#getPage(pageIndex)
         const index = page.value.findIndex(cmp)
         const removed = page.value.splice(index, 1)[0]
-        await this.#realloc(page, pageIndex)
+       await this.#realloc(page, pageIndex)
         return { value: removed, index }
     }
 
